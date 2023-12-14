@@ -3,50 +3,103 @@ package fr.pantheonsorbonne.ufr27.miashs.poo;
 import java.lang.String;
 import java.util.ArrayList;
 
+
 public final class ItemsScrapper {
   ArrayList<Item> parseSource(String pageSource) {
     ArrayList<Item> itemList = new ArrayList<>();
-    int startIndex = 0;
-    while ((startIndex = pageSource.indexOf("<tr class=\"all_lines\">", startIndex)) != -1) { 
+    int index = pageSource.indexOf("<tr class=\"leaders\">");
+    while (true) {
       Item item = new Item();
       // add code here
-      // Classement
-      startIndex = pageSource.indexOf("<span data-sort-value=\"", startIndex) + "<span data-sort-value=\"".length();
-      int endIndex = pageSource.indexOf("\"", startIndex);
-      item.setClassement(Integer.parseInt(pageSource.substring(startIndex, endIndex).trim()));
-      //PlusMoins
-      startIndex = pageSource.indexOf("<span data-sort-value=\"", startIndex) + "<span data-sort-value=\"".length();
-      endIndex = pageSource.indexOf("\"", startIndex);
-      item.setPlusMoins(Double.parseDouble(pageSource.substring(startIndex, endIndex).trim()));
-      //Nom du joueur
-      startIndex = pageSource.indexOf("<td class=\"name\"><span class=\"hidden searched\"></span> <a href=\"", startIndex) + "<td class=\"name\"><span class=\"hidden searched\"></span> <a href=\"".length();
-      endIndex = pageSource.indexOf("</a>", startIndex);
-      String playerNameData =  pageSource.substring(startIndex, endIndex);
-      int playerLinkStartIndex = playerNameData.indexOf("\">") + "\">".length();
-      int playerLinkEndIndex = playerNameData.indexOf("</a>");
-      item.setNomJoueur(playerNameData.substring(playerLinkStartIndex, playerLinkEndIndex).trim());
-      //Pays du Joueur
-      startIndex = pageSource.indexOf("<td class=\"country f24\"><span class=\"hidden searched\">", startIndex) + "<td class=\"country f24\"><span class=\"hidden searched\">".length();
-      endIndex = pageSource.indexOf("</span>", startIndex);
-      item.setPaysJoueur(pageSource.substring(startIndex, endIndex).trim());
-      //EloClassic
-      startIndex = pageSource.indexOf("<td class=\"live_standard_rating\"><strong data-sort-value=\"", startIndex) + "<td class=\"live_standard_rating\"><strong data-sort-value=\"".length();
-      endIndex = pageSource.indexOf("</strong></td>", startIndex);
-      item.setEloClassic(Double.parseDouble(pageSource.substring(startIndex, endIndex).trim()));
-      //EloRapid
-       startIndex = pageSource.indexOf("<td class=\"live_rapid_rating canhide\"><strong data-sort-value=\"", startIndex) + "<td class=\"live_rapid_rating canhide\"><strong data-sort-value=\"".length();
-      endIndex = pageSource.indexOf("</strong></td>", startIndex);
-      item.setEloRapid(Double.parseDouble(pageSource.substring(startIndex, endIndex).trim()));
-      //EloBlitz
-       startIndex = pageSource.indexOf("<td class=\"live_blitz_rating canhide\"><strong data-sort-value=\"", startIndex) + "<td class=\"live_blitz_rating canhide\"><strong data-sort-value=\"".length();
-      endIndex = pageSource.indexOf("</strong></td>", startIndex);
-      item.setEloBlitz(Double.parseDouble(pageSource.substring(startIndex, endIndex).trim()));
-      //Age 
-      startIndex = pageSource.indexOf("<td class=\"age\"><span data-sort-value=\"", startIndex) + "<td class=\"age\"><span data-sort-value=\"".length();
-      endIndex = pageSource.indexOf("</strong></td>", startIndex);
-      item.setAge(Integer.parseInt(pageSource.substring(startIndex, endIndex).trim()));
+      int indexClassement = pageSource.indexOf("Please log in to check the best ranks\">", index);
+      int indexClassementFin = pageSource.indexOf("</span></td>", indexClassement);
+      String classementString = pageSource.substring(indexClassement, indexClassementFin).replaceAll("\\D", ""); // Supprimer les caractères non numériques
+      int Classement = Integer.parseInt(classementString);
 
+      int indexEloClassic = pageSource.indexOf("the rank at that time\">", index);
+      int indexEloClassicFin = pageSource.indexOf("</strong></td>", indexEloClassic);
+      String eloClassicString = pageSource.substring(indexEloClassic, indexEloClassicFin)
+        .replaceAll("[^0-9.]", ""); // Supprimer les caractères non numériques
+        double eloClassic = 0.0;
+
+        // Vérifier la classe de la colonne Elo Classic
+        if (pageSource.contains("live_standard_rating")) {
+            eloClassic = Double.parseDouble(eloClassicString);
+        }
+
+      int indexPaysJoueur = pageSource.indexOf("<td class=\"country f24\"><span class=\"hidden searched\">", index);
+      int indexPaysJoueurFin = pageSource.indexOf("</span> ", indexPaysJoueur);
+      String paysJoueur = pageSource.substring(indexPaysJoueur, indexPaysJoueurFin).replaceAll("<.*?>", "").trim();
+// Scrapping du nom du joueur
+     
+int indexNomJoueur = pageSource.indexOf("<a href=\"/players/", index);
+int indexNomJoueurFin = pageSource.indexOf("</a></td>", indexNomJoueur);
+String nomJoueurHtml = pageSource.substring(indexNomJoueur, indexNomJoueurFin);
+String nomJoueur = nomJoueurHtml.replaceAll("<.*?>", "").trim();
+
+int indexEloRapid = pageSource.indexOf("live_rapid_rating canhide", index);
+int indexEloRapidValue = pageSource.indexOf("data-sort-value=\"", indexEloRapid) + "data-sort-value=\"".length();
+int indexEloRapidFin = pageSource.indexOf("_1\"", indexEloRapidValue);
+String eloRapidString = pageSource.substring(indexEloRapidValue, indexEloRapidFin)
+    .replaceAll("[^0-9.]", ""); // Supprimer les caractères non numériques
+
+double eloRapid = Double.parseDouble(eloRapidString);
+
+int indexEloBlitz = pageSource.indexOf("live_blitz_rating canhide", index);
+int indexEloBlitzValue = pageSource.indexOf("data-sort-value=\"", indexEloBlitz) + "data-sort-value=\"".length();
+int indexEloBlitzFin = pageSource.indexOf("_1\"", indexEloBlitzValue);
+String eloBlitzString = pageSource.substring(indexEloBlitzValue, indexEloBlitzFin)
+    .replaceAll("[^0-9.]", ""); // Supprimer les caractères non numériques
+
+double eloBlitz = Double.parseDouble(eloBlitzString);
+
+
+int indexPlusMoins = pageSource.indexOf("<td class=\"position_change\"><span data-sort-value=\"", index);
+int indexPlusMoinsFin = pageSource.indexOf("\" class=\"hidden\"> </span></td>", indexPlusMoins);
+String PlusMoins = pageSource.substring(indexPlusMoins, indexPlusMoinsFin).replaceAll("<.*?>", "").trim();
+String plusMoinsValue = PlusMoins.replaceAll("[^0-9.-]", "");
+
+// Supprime le préfixe "--" s'il est présent
+if (plusMoinsValue.startsWith("--")) {
+    plusMoinsValue = plusMoinsValue.substring(2);
+}
+
+double plusMoins = Double.parseDouble(plusMoinsValue) / 1000.0;
+
+// ...
+// ...
+int indexAge = pageSource.indexOf("<td class=\"age\">", index);
+int indexAgeTitle = pageSource.indexOf("title=\"", indexAge);
+int indexAgeTitleEnd = pageSource.indexOf("\">", indexAgeTitle);
+
+String ageTitle = pageSource.substring(indexAgeTitle + "title=\"".length(), indexAgeTitleEnd);
+
+// Extraction de l'année de naissance
+int birthYear = Integer.parseInt(ageTitle.substring(ageTitle.lastIndexOf(' ') + 1));
+
+// Calcul de l'âge
+int age = 2023 - birthYear;
+// ...
+
+
+
+
+
+
+      
+
+      
+      
+      item.setEloClassic(eloClassic);
+      item.setEloRapid(eloRapid);
+      item.setEloBlitz(eloBlitz);
+      item.setPlusMoins(plusMoins);
+      item.setClassement(Classement);
+      item.setAge(age);
+      item.setPaysJoueur(paysJoueur);
+      item.setNomJoueur(nomJoueur);
       itemList.add(item);
+      
       
       if(true) {
         // on a fini d'extraire les item
