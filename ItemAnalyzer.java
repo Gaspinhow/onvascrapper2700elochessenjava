@@ -5,150 +5,209 @@ import java.lang.Integer;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+
 public final class ItemAnalyzer {
   private ArrayList<Item> items = new ArrayList<>();
 
   public ItemAnalyzer(ArrayList<Item> items) {
     this.items=items;
   }
-
-  public Double getMoyEloClassicTop100() {
+//MoyenneCLassique
+  public double getMoyEloClassicTop100() {
     double sommeEloClassic = 0.0;
-  for(Item item : items){
-    sommeEloClassic+= item.getEloClassic();
-  }
+    for (Item item : items) {
+        sommeEloClassic += item.getEloClassic();
+    }
     return sommeEloClassic / items.size();
+}
+
+//MoyenneRapide
+public double getMoyEloRapidTop100() {
+  double sommeEloRapid = 0.0;
+  for (Item item : items) {
+      sommeEloRapid += item.getEloRapid();
   }
+  return sommeEloRapid / items.size();
+}
 
-  public String getMeilleurPlusMoins() {
-    Item meilleurJoueur = null;
+//Moyenne Blitz
+public double getMoyEloBlitzTop100() {
+  double sommeEloBlitz = 0.0;
+  for (Item item : items) {
+      sommeEloBlitz += item.getEloBlitz();
+  }
+  return sommeEloBlitz / items.size();
+}
 
-    for(Item joueur : items ){
-      if(meilleurJoueur == null || joueur.getPlusMoins() > meilleurJoueur.getPlusMoins()){meilleurJoueur = joueur;
-      }
+//Moyenne Age
+  public double getMoyenneAge() {
+    double sommeAge = 0.0;
+    for (Item item : items) {
+        sommeAge += item.getAge();
     }
-    return (meilleurJoueur != null) ? meilleurJoueur.getNomJoueur() + " avec un +/- de " + meilleurJoueur.getPlusMoins() : "";
-  }
+    return sommeAge / items.size();
+}
 
-  public Integer getAgeMoyenTop100() {
-    int sommeAge = 0;
-    for(Item joueur:items){
-      sommeAge += joueur.getAge();
-    }
-    return  sommeAge /  items.size();
-
-  }
-
-  public String getPaysPlusRepresent() {
-    HashMap<String, Integer> paysCounts = new HashMap<>();
-    for (Item joueur : items ){
+//PaysPlusRPZ
+public String getPaysPlusRepresent() {
+  HashMap<String, Integer> countByPays = new HashMap<>();
+  for (Item joueur : items) {
       String pays = joueur.getPaysJoueur();
-      paysCounts.put(pays , paysCounts.getOrDefault(pays, 0) +1);
-    }
-    int maxCount = 0;
-    String paysPlusRepresent = "";
+      countByPays.put(pays, countByPays.getOrDefault(pays, 0) + 1);
+  }
+  String paysPlusRepresent = "";
+  int nombreJoueursMax = 0;
 
-    for(String pays : paysCounts.keySet()){
-      int count = paysCounts.get(pays);
-      if (count > maxCount){
-        maxCount = count;
-        paysPlusRepresent = pays;
+  for (Map.Entry<String, Integer> entry : countByPays.entrySet()) {
+      String pays = entry.getKey();
+      int nombreJoueurs = entry.getValue();
+
+      if (nombreJoueurs > nombreJoueursMax) {
+          paysPlusRepresent = pays;
+          nombreJoueursMax = nombreJoueurs;
       }
-    }
+  }
+  return paysPlusRepresent.isEmpty()
+          ? "" 
+          : "Le pays le plus représenté est " + paysPlusRepresent + " avec " + nombreJoueursMax + " joueurs.";
+}
 
-    return paysPlusRepresent + " avec " + maxCount + " joueurs";
+
+//MeilleureMoyenne
+public String getPaysMeilleurMoyEloClassic() {
+  if (items == null || items.isEmpty()) {
+      return ""; 
+  }
+  HashMap<String, Double> sumByPays = new HashMap<>();
+  HashMap<String, Integer> countByPays = new HashMap<>();
+  for (Item joueur : items) {
+      String pays = joueur.getPaysJoueur();
+      double eloClassic = joueur.getEloClassic();
+
+      sumByPays.put(pays, sumByPays.getOrDefault(pays, 0.0) + eloClassic);
+      countByPays.put(pays, countByPays.getOrDefault(pays, 0) + 1);
   }
 
-  public String getPaysMeilleurMoyEloClassic() {
-    HashMap<String , Double>  moyenneParPays= new HashMap<>();
-    HashMap<String , Integer> countParPays = new HashMap<>();
-    for (Item joueur :items);{
-    String pays = joueur.getPaysJoueur();
-    moyenneParPays.put(pays, countParPays.getOrDefault(pays, 0.0)+joueur.getEloClassic());
-    countParPays.put(pays , countParPays.getOrDefault(pays, 0) +1);
-    }
-    double meilleureMoyenne = 0.0;
-    String paysMeilleureMoyenne = "";
+//PaysMeilleureMoyenne
+  HashMap<String, Double> moyenneByPays = new HashMap<>();
 
-    for (String pays : moyenneParPays.keySet()) {
-      double moyenne = moyenneParPays.get(pays) / countParPays.get(pays);
+  for (Map.Entry<String, Double> entry : sumByPays.entrySet()) {
+      String pays = entry.getKey();
+      double sum = entry.getValue();
+      int nombreJoueurs = countByPays.getOrDefault(pays, 0);
+      if (nombreJoueurs > 0) {
+          double moyenne = sum / nombreJoueurs;
+          moyenneByPays.put(pays, moyenne);
+      }
+  }
+  String paysMeilleurMoyenne = "";
+  double meilleureMoyenne = Double.MIN_VALUE;
+
+  for (Map.Entry<String, Double> entry : moyenneByPays.entrySet()) {
+      String pays = entry.getKey();
+      double moyenne = entry.getValue();
+
       if (moyenne > meilleureMoyenne) {
+          paysMeilleurMoyenne = pays;
           meilleureMoyenne = moyenne;
-          paysMeilleureMoyenne = pays;
       }
   }
-  return paysMeilleureMoyenne + " avec une moyenne de " + meilleureMoyenne;
+  return paysMeilleurMoyenne.isEmpty()
+          ? "" 
+          : "Le pays avec la meilleure moyenne d'Elo classique est " + paysMeilleurMoyenne
+                  + " avec une moyenne de " + meilleureMoyenne + ".";
+}
 
-  }
 
-  public Double getMeilleurRapportAgeEloClassic() {
-    double meilleurRapport = 0.0;
-    for(Item joueur:items){
-      double rapport = joueur.getEloClassic()/joueur.getAge();
-      if (rapport > meilleurRapport){
-        meilleurRapport = rapport;
-      }
-    }
-
-    return meilleurRapport;
-  }
-
-  public double  getPirePlusMoins() {
-    Item pireJoueur = null;
-    for(Item joueur:items){
-      if(pireJoueur ==null|| joueur.getPlusMoins() <pireJoueur.getPlusMoins()){pireJoueur = joueur;
-    }
-    return (pireJoueur != null) ? pireJoueur.getNomJoueur() + " avec un +/- de " + pireJoueur.getPlusMoins() : "";}
-  }
-
+//PaysMoinsRPZ
   public String getPaysMoinsRepresent() {
-    HashMap<String, Integer> paysCounts = new HashMap<>();
-    for (Item joueur : items ){
-      String pays = joueur.getPaysJoueur();
-      paysCounts.put(pays , paysCounts.getOrDefault(pays, 0) +1);
+    if (items == null || items.isEmpty()) {
+        return ""; 
     }
-    int minCount = 0;
+    HashMap<String, Integer> countByPays = new HashMap<>();
+    for (Item joueur : items) {
+        String pays = joueur.getPaysJoueur();
+        countByPays.put(pays, countByPays.getOrDefault(pays, 0) + 1);
+    }
     String paysMoinsRepresent = "";
+    int nombreJoueursMin = Integer.MAX_VALUE;
 
-    for(String pays : paysCounts.keySet()){
-      int count = paysCounts.get(pays);
-      if (count < minCount){
-        minCount = count;
-        paysMoinsRepresent = pays;
-      }
+    for (Map.Entry<String, Integer> entry : countByPays.entrySet()) {
+        String pays = entry.getKey();
+        int nombreJoueurs = entry.getValue();
+
+        if (nombreJoueurs < nombreJoueursMin) {
+            paysMoinsRepresent = pays;
+            nombreJoueursMin = nombreJoueurs;
+        }
     }
+    return paysMoinsRepresent.isEmpty()
+            ? "" 
+            : "Le pays le moins représenté est " + paysMoinsRepresent + " avec " + nombreJoueursMin + " joueur(s).";
+}
 
-    return paysMoinsRepresent + " avec " + minCount + " joueurs";
-  }
 
   public Double getMedianeEloClassicTop100() {
-    int taille = items.size();
-    int index1 = taille/2 -1;
-    int index2 = taille/2;
-    return (items.get(index1).getEloClassic()+items.get(index2).getEloClassic())/2.0;
+    // code here
+    return null;
   }
 
   public Double getEcartTypeEloClassicTop100() {
-    int taille = items.size();
-    double moyenne = getMoyEloClassicTop100();
-    double sommeCarresEcarts = 0.0;
-    for (Item joueur: items );{
-      double ecart = joueur.getEloClassi() - moyenne;
-      sommeCarresEcarts += ecart * ecart; 
-    }
-    double variance = sommeCarresEcarts / taille ;
-    double ecartType = Math.sqrt(variance);
-    return ecartType;
+    // code here
+    return null;
   }
 
-  public Double getMeilleurEloTotal() {
-    Double meilleurEloTotal = 0.0;
-    for(Item joueur:items){
-      Double eloTotal = joueur.getEloClassic()+joueur.getEloBlitz()+joueur.getEloRapid();
-      if (eloTotal > meilleurEloTotal){
-        meilleurEloTotal = eloTotal;
-      }
+//MeilleurEloTotal
+  public String getJoueurMeilleurEloTotal() {
+    String meilleurJoueur = "";
+    double meilleurEloTotal = 0.0;
+
+    for (Item joueur : items) {
+        double eloTotal = joueur.getEloClassic() + joueur.getEloRapid() + joueur.getEloBlitz();
+
+        if (eloTotal > meilleurEloTotal) {
+            meilleurEloTotal = eloTotal;
+            meilleurJoueur = joueur.getNomJoueur();
+        }
     }
-    return meilleurEloTotal;
-  }
+
+    return meilleurJoueur + " : " + meilleurEloTotal;
 }
+
+//MeilleurRapportELOAGE
+  public String getJoueurMeilleurRapportAgeEloClassic() {
+    String meilleurJoueur = "";
+    double meilleurRapport = 0.0;
+
+    for (Item joueur : items) {
+        double rapport = joueur.getEloClassic() / joueur.getAge();
+
+        if (rapport > meilleurRapport) {
+            meilleurRapport = rapport;
+            meilleurJoueur = joueur.getNomJoueur();
+        }
+    }
+
+    return meilleurJoueur + " : " + meilleurRapport;
+}
+//PireRapportELOAGE
+public String getJoueurPireRapportAgeEloClassic(){
+  String pireJoueur = "";
+  double pireRapport = Double.POSITIVE_INFINITY; // Initialiser à une valeur positive infinie pour s'assurer que le premier rapport est toujours plus petit
+
+  for(Item joueur : items) {
+      double rapport = joueur.getEloClassic() / joueur.getAge();
+
+      if(rapport < pireRapport){
+          pireRapport = rapport;
+          pireJoueur = joueur.getNomJoueur();
+      }
+  }
+  return pireJoueur + " : " + pireRapport; // Afficher le rapport plutôt que le nom du joueur deux fois
+}
+
+
+
+}
+
