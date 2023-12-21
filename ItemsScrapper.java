@@ -1,6 +1,8 @@
 package fr.pantheonsorbonne.ufr27.miashs.poo;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class ItemsScrapper {
     ArrayList<Item> parseSource(String pageSource) {
@@ -44,6 +46,30 @@ public final class ItemsScrapper {
                 eloClassic = Double.parseDouble(eloClassicString);
             }
 
+            //PeakElo
+            double peakElo = 0.0;
+            int indexPeakElo = pageSource.indexOf("data-placement=\"top\" title=\"Best Rating", index);
+            int indexPeakEloFin = pageSource.indexOf("- ", indexPeakElo);
+            
+            if (indexPeakElo >= 0 && indexPeakEloFin > indexPeakElo) {
+                String peakEloSubstring = pageSource.substring(indexPeakElo, indexPeakEloFin);
+                String numericPart = peakEloSubstring.replaceAll("[^\\d.]", "");
+                if (!numericPart.isEmpty()) {
+                    peakElo = Double.parseDouble(numericPart);
+                }
+            }
+           //PlusMOINSSHALLAH
+           double plusMoins = 0.0;  
+           int indexPlusMoins = pageSource.indexOf("class=\"standard_change change\"><span data-sort-value=", index);
+           if (indexPlusMoins >= 0) {
+           Pattern pattern = Pattern.compile("[-+]?(\\d*\\.?\\d+|\\d+\\.?\\d*)", Pattern.CASE_INSENSITIVE);
+           Matcher matcher = pattern.matcher(pageSource.substring(indexPlusMoins));
+           if (matcher.find()) {
+        plusMoins = Double.parseDouble(matcher.group());
+    }
+}
+        plusMoins -= 1000.0;
+
              // Elo Rapid
              double eloRapid = 0.0; 
              int indexEloRapid = pageSource.indexOf("live_rapid_rating canhide", index);
@@ -62,20 +88,21 @@ public final class ItemsScrapper {
            if(eloRapid>200 && eloRapid<300){
             eloRapid *= 10;
            }
-           }
-           }
+        }
+     }
+           //Classement
+            int classement = 0; 
             int indexClassement = pageSource.indexOf("Please log in to check the best ranks\">", index);
             int indexClassementFin = pageSource.indexOf("</span></td>", indexClassement);
-            int classement = 0;  // Declare classement outside the if condition
             if (indexClassement != -1 && indexClassementFin != -1) {
             String classementString = pageSource.substring(indexClassement, indexClassementFin).replaceAll("\\D", "");
             classement = Integer.parseInt(classementString);
             }
            //Age
+           int age = 0;  
            int indexAge = pageSource.indexOf("<td class=\"age\">", index);
            int indexAgeTitle = pageSource.indexOf("title=\"", indexAge);
            int indexAgeTitleEnd = pageSource.indexOf("\">", indexAgeTitle);
-           int age = 0;  // Declare age outside the if condition
            if (indexAge != -1 && indexAgeTitle != -1 && indexAgeTitleEnd != -1) {
            String ageTitle = pageSource.substring(indexAgeTitle + "title=\"".length(), indexAgeTitleEnd);
            int birthYear = Integer.parseInt(ageTitle.substring(ageTitle.lastIndexOf(' ') + 1));
@@ -83,7 +110,7 @@ public final class ItemsScrapper {
            }
            
            //EloBlitz
-            double eloBlitz = 0.0;  // Declare eloBlitz outside the if condition
+            double eloBlitz = 0.0; 
             int indexEloBlitz = pageSource.indexOf("live_blitz_rating canhide", index);
             if (indexEloBlitz != -1) {
             int indexEloBlitzValue = pageSource.indexOf("data-sort-value=\"", indexEloBlitz) + "data-sort-value=\"".length();
@@ -97,42 +124,42 @@ public final class ItemsScrapper {
             if (eloBlitz > 200 && eloBlitz < 300) {
               eloBlitz *= 10;
           }
-          //PlusMoinsINshalla
-          
       }
+      
   }
-  
+            
 
-  
-
-  
-
-
-             
-
-            // Example: Convert to uppercase
-            nomJoueur = nomJoueur.toUpperCase();
-            paysJoueur = paysJoueur.toUpperCase();
-
-            // add code here for further processing if needed
             Item item = new Item();
             item.setEloClassic(eloClassic);
             item.setEloRapid(eloRapid);
             item.setEloBlitz(eloBlitz);
-            item.setPlusMoins(null);
+            item.setPlusMoins(plusMoins);
             item.setClassement(classement);
             item.setAge(age);
             item.setNomJoueur(nomJoueur);
             item.setPaysJoueur(paysJoueur);
+            item.setPeakElo(peakElo);
             itemList.add(item);
 
-            // Move to the next index
+            //Calculer la perf
+            double eloBase = item.getEloClassic();
+            double plusMoins1 = item.getPlusMoins();
+            double coefficientElo = 0.2 + (eloBase / 1200.0); 
+            double plusMoinsAjuste = plusMoins1 * coefficientElo;
+            double eloAjuste = eloBase + plusMoinsAjuste;
+            double variationElo = eloAjuste ;
+
+            item.setPerformance(variationElo);
+            
+
+            //Aller a l index suicant
             index = pageSource.indexOf("<tr class", indexNomJoueurFin);
-            if (index == -1) {
-                break;  // exit the loop if no more occurrences of "<tr class"
+            if (index ==-1) {
+                break;  
             }
         }
         return itemList;
     }
+    
 }
     
